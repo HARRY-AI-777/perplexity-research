@@ -12,7 +12,10 @@ API_KEY = os.getenv("PERPLEXITY_API_KEY")
 @app.get("/")
 def root():
     return {"status": "ok", "message": "Perplexity Render 서버 정상 작동 중입니다."}
-
+# ✅ 이 부분을 추가!
+@app.head("/")
+async def root_head():
+    return JSONResponse(status_code=200)
 @app.post("/research")
 async def research(request: Request):
     data = await request.json()
