@@ -1,3 +1,4 @@
+
 from fastapi import FastAPI, Request
 import requests, os
 from dotenv import load_dotenv
@@ -6,6 +7,11 @@ load_dotenv()
 
 app = FastAPI()
 API_KEY = os.getenv("PERPLEXITY_API_KEY")
+
+# ✅ Render 헬스체크용 루트 경로 추가
+@app.get("/")
+def root():
+    return {"status": "ok", "message": "Perplexity Render 서버 정상 작동 중입니다."}
 
 @app.post("/research")
 async def research(request: Request):
