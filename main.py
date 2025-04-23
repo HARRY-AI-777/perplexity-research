@@ -1,52 +1,38 @@
-
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-import requests, os
-from dotenv import load_dotenv
-
-load_dotenv()
+from fastapi import FastAPI
+from pydantic import BaseModel
+import threading
+import time
+import requests
 
 app = FastAPI()
-API_KEY = os.getenv("PERPLEXITY_API_KEY")
 
-# ✅ 루트 GET 요청 (Render 헬스체크용)
-@app.get("/")
-async def root():
-    return JSONResponse(
-        content={"status": "ok", "message": "Perplexity Render 서버 정상 작동 중입니다."},
-        media_type="application/json; charset=utf-8"
-    )
+# Perplexity용 요청 포맷
+class Query(BaseModel):
+    query: str
+    lang: str = "ko"
 
-# ✅ 루트 HEAD 요청 (Render/UptimeRobot에서 발생)
-@app.head("/")
-async def root_head():
-    return JSONResponse(status_code=200)
-
-# ✅ Perplexity API 프록시 POST 요청
+# POST /research → Perplexity 응답 시뮬레이션
 @app.post("/research")
-async def research(request: Request):
-    data = await request.json()
-    question = data.get("query")
-    if not question:
-        return {"error": "No query provided"}
-
-    headers = {
-        "Authorization": f"Bearer {API_KEY}",
-        "Content-Type": "application/json"
+def research(query: Query):
+    return {
+        "result": f"Perplexity 응답 시뮬레이션: {query.query} (언어: {query.lang})"
     }
 
-    payload = {
-        "model": "pplx-70b-online",
-        "messages": [
-            {"role": "system", "content": "Answer using real-time data with sources."},
-            {"role": "user", "content": question}
-        ]
+# GET / → UptimeRobot 헬스체크용
+@app.get("/")
+def root():
+    return {
+        "status": "Replit 서버는 정상 작동 중입니다."
     }
 
-    response = requests.post(
-        "https://api.perplexity.ai/chat/completions",
-        headers=headers,
-        json=payload
-    )
+# Keep-Alive 루프 → Replit 절전 방지
+def keep_alive():
+    while True:
+        try:
+            requests.get("https://perplexity-research-server.webtools21.replit.app/")
+        except:
+            pass
+        time.sleep(300)  # 5분 간격
 
-    return response.json()
+# 루프 실행
+threading.Thread(target=keep_alive, daemon=True).start()
